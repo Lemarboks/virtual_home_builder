@@ -7,8 +7,15 @@ interface Props {
   onBack: () => void
 }
 
+// Fix #7: hoist outside the component so the formatter object is created once,
+// not on every render/call.
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short', day: 'numeric', year: 'numeric',
+  hour: 'numeric', minute: '2-digit',
+})
+
 function formatDate(iso: string) {
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso))
+  return dateFormatter.format(new Date(iso))
 }
 
 export function LoadProjectsPage({ onBack }: Props) {
@@ -29,6 +36,7 @@ export function LoadProjectsPage({ onBack }: Props) {
   }, [])
 
   async function handleLoad(id: string) {
+    setError(null) // Fix #6: clear stale error before each operation
     setLoadingId(id)
     try {
       const data = await loadProject(id)
@@ -42,6 +50,7 @@ export function LoadProjectsPage({ onBack }: Props) {
 
   async function handleDelete(id: string) {
     if (!window.confirm('Delete this project? This cannot be undone.')) return
+    setError(null) // Fix #6: clear stale error before each operation
     setDeletingId(id)
     try {
       await deleteProject(id)

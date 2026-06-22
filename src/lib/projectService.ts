@@ -20,27 +20,27 @@ export interface SaveProjectParams {
 export async function saveProject(params: SaveProjectParams): Promise<string> {
   const { projectId, projectName, roomDimensions, wallColor, floorColor, furnitureItems } = params
 
-  // Upsert project row
-  let savedProjectId: string
-  if (projectId) {
-    const { error } = await supabase
-      .from('projects')
-      .update({ name: projectName, updated_at: new Date().toISOString() })
-      .eq('id', projectId)
-    if (error) throw error
-    savedProjectId = projectId
-  } else {
-    const { data, error } = await supabase
-      .from('projects')
-      .insert({ name: projectName })
-      .select('id')
-      .single()
-    if (error) throw error
-    savedProjectId = data.id as string
-  }
+  // Fix #2: upsert so a stale projectId re-creates the row rather than leaving
+  // rooms with a dangling FK and the user stuck in a permanent error state.
+  const { data: projectRow, error: projectError } = await supabase
+    .from('projects')
+    .upsert({
+      ...(projectId ? { id: projectId } : {}),
+      name: projectName,
+      updated_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  if (projectError) throw projectError
+  const savedProjectId = projectRow.id as string
 
-  // Replace the single room (cascade deletes old furniture_items too)
-  await supabase.from('rooms').delete().eq('project_id', savedProjectId)
+  // Fix #1: check the delete error so a timeout here throws instead of silently
+  // leaving orphan rows before the insert.
+  const { error: deleteError } = await supabase
+    .from('rooms')
+    .delete()
+    .eq('project_id', savedProjectId)
+  if (deleteError) throw deleteError
 
   const { data: room, error: roomError } = await supabase
     .from('rooms')
@@ -87,7 +87,8 @@ export async function listProjects(): Promise<ProjectSummary[]> {
     .select('id, name, created_at, updated_at')
     .order('updated_at', { ascending: false })
   if (error) throw error
-  return data as ProjectSummary[]
+  // Fix #4: Supabase returns null (not []) when the table is empty.
+  return (data ?? []) as ProjectSummary[]
 }
 
 export interface LoadedProject {
@@ -99,33 +100,39 @@ export interface LoadedProject {
 }
 
 export async function loadProject(projectId: string): Promise<LoadedProject> {
-  const [{ data: projectData, error: projectError }, { data: roomData, error: roomError }, { data: furniData, error: furniError }] =
-    await Promise.all([
-      supabase.from('projects').select('name').eq('id', projectId).single(),
-      supabase.from('rooms').select('*').eq('project_id', projectId).limit(1).single(),
-      supabase.from('furniture_items').select('*').eq('project_id', projectId),
-    ])
+  const [
+    { data: projectData, error: projectError },
+    { data: roomData,    error: roomError },
+    { data: furniData,   error: furniError },
+  ] = await Promise.all([
+    supabase.from('projects').select('name').eq('id', projectId).single(),
+    // Fix #3: maybeSingle so a project with no room row gives a clear error
+    // instead of "JSON object requested, multiple (or no) rows returned".
+    supabase.from('rooms').select('*').eq('project_id', projectId).limit(1).maybeSingle(),
+    supabase.from('furniture_items').select('*').eq('project_id', projectId),
+  ])
 
   if (projectError) throw projectError
-  if (roomError) throw roomError
-  if (furniError) throw furniError
+  if (roomError)    throw roomError
+  if (furniError)   throw furniError
+  if (!roomData)    throw new Error('Project has no room data — it may be corrupted.')
 
   return {
     projectName: projectData.name as string,
     roomDimensions: {
-      width: Number(roomData.width),
+      width:  Number(roomData.width),
       length: Number(roomData.length),
       height: Number(roomData.height),
     },
-    wallColor: roomData.wall_color as string,
+    wallColor:  roomData.wall_color  as string,
     floorColor: roomData.floor_color as string,
     furnitureItems: (furniData ?? []).map((row) => ({
-      id: row.id as string,
-      type: row.type as FurnitureType,
+      id:       row.id as string,
+      type:     row.type as FurnitureType,
       position: [Number(row.position_x), Number(row.position_y), Number(row.position_z)] as [number, number, number],
       rotation: [Number(row.rotation_x), Number(row.rotation_y), Number(row.rotation_z)] as [number, number, number],
-      size: [Number(row.size_x), Number(row.size_y), Number(row.size_z)] as [number, number, number],
-      color: row.color as string,
+      size:     [Number(row.size_x),     Number(row.size_y),     Number(row.size_z)]     as [number, number, number],
+      color:    row.color as string,
     })),
   }
 }

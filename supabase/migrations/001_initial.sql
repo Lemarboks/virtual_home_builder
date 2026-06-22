@@ -37,9 +37,26 @@ create table if not exists furniture_items (
   created_at  timestamptz not null default now()
 );
 
-create index if not exists rooms_project_id_idx          on rooms(project_id);
+-- Fix #10: index updated_at descending to match the listProjects() ORDER BY.
+create index if not exists projects_updated_at_idx        on projects(updated_at desc);
+create index if not exists rooms_project_id_idx           on rooms(project_id);
 create index if not exists furniture_items_project_id_idx on furniture_items(project_id);
 create index if not exists furniture_items_room_id_idx    on furniture_items(room_id);
+
+-- Fix #10: trigger keeps updated_at current on every UPDATE so the sort order
+-- is always correct even when rows are modified outside the app (e.g. via the
+-- Supabase dashboard or a future admin tool).
+create or replace function set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger projects_set_updated_at
+  before update on projects
+  for each row execute function set_updated_at();
 
 -- Row Level Security: disabled for now (no auth yet).
 -- When you add Supabase Auth, enable RLS and add policies like:

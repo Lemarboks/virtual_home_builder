@@ -33,6 +33,7 @@ function App() {
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             aria-label="Project name"
+            maxLength={80}
             spellCheck={false}
           />
           {projectId && <span className="project-saved-badge">saved</span>}
