@@ -1,6 +1,11 @@
 import { supabase } from './supabase'
 import type { FurnitureItemData, FurnitureType, RoomDimensions } from '../types/home'
 
+function db() {
+  if (!supabase) throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to your environment.')
+  return supabase
+}
+
 export interface ProjectSummary {
   id: string
   name: string
@@ -20,9 +25,7 @@ export interface SaveProjectParams {
 export async function saveProject(params: SaveProjectParams): Promise<string> {
   const { projectId, projectName, roomDimensions, wallColor, floorColor, furnitureItems } = params
 
-  // Fix #2: upsert so a stale projectId re-creates the row rather than leaving
-  // rooms with a dangling FK and the user stuck in a permanent error state.
-  const { data: projectRow, error: projectError } = await supabase
+  const { data: projectRow, error: projectError } = await db()
     .from('projects')
     .upsert({
       ...(projectId ? { id: projectId } : {}),
@@ -34,15 +37,13 @@ export async function saveProject(params: SaveProjectParams): Promise<string> {
   if (projectError) throw projectError
   const savedProjectId = projectRow.id as string
 
-  // Fix #1: check the delete error so a timeout here throws instead of silently
-  // leaving orphan rows before the insert.
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await db()
     .from('rooms')
     .delete()
     .eq('project_id', savedProjectId)
   if (deleteError) throw deleteError
 
-  const { data: room, error: roomError } = await supabase
+  const { data: room, error: roomError } = await db()
     .from('rooms')
     .insert({
       project_id: savedProjectId,
@@ -57,7 +58,7 @@ export async function saveProject(params: SaveProjectParams): Promise<string> {
   if (roomError) throw roomError
 
   if (furnitureItems.length > 0) {
-    const { error: furniError } = await supabase.from('furniture_items').insert(
+    const { error: furniError } = await db().from('furniture_items').insert(
       furnitureItems.map((item) => ({
         id: item.id,
         project_id: savedProjectId,
@@ -82,12 +83,11 @@ export async function saveProject(params: SaveProjectParams): Promise<string> {
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from('projects')
     .select('id, name, created_at, updated_at')
     .order('updated_at', { ascending: false })
   if (error) throw error
-  // Fix #4: Supabase returns null (not []) when the table is empty.
   return (data ?? []) as ProjectSummary[]
 }
 
@@ -100,16 +100,15 @@ export interface LoadedProject {
 }
 
 export async function loadProject(projectId: string): Promise<LoadedProject> {
+  const client = db()
   const [
     { data: projectData, error: projectError },
     { data: roomData,    error: roomError },
     { data: furniData,   error: furniError },
   ] = await Promise.all([
-    supabase.from('projects').select('name').eq('id', projectId).single(),
-    // Fix #3: maybeSingle so a project with no room row gives a clear error
-    // instead of "JSON object requested, multiple (or no) rows returned".
-    supabase.from('rooms').select('*').eq('project_id', projectId).limit(1).maybeSingle(),
-    supabase.from('furniture_items').select('*').eq('project_id', projectId),
+    client.from('projects').select('name').eq('id', projectId).single(),
+    client.from('rooms').select('*').eq('project_id', projectId).limit(1).maybeSingle(),
+    client.from('furniture_items').select('*').eq('project_id', projectId),
   ])
 
   if (projectError) throw projectError
@@ -138,6 +137,6 @@ export async function loadProject(projectId: string): Promise<LoadedProject> {
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  const { error } = await supabase.from('projects').delete().eq('id', projectId)
+  const { error } = await db().from('projects').delete().eq('id', projectId)
   if (error) throw error
 }
