@@ -202,6 +202,7 @@ export function House() {
       map={wallTex ?? undefined}
       color={wallTex ? '#ffffff' : wallColor}
       roughness={0.88} metalness={0}
+      side={2} /* THREE.DoubleSide — walls visible from inside in FPS mode */
     />
   )
 

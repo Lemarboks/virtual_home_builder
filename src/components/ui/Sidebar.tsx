@@ -4,6 +4,7 @@ import { PropertyPanel }    from './panels/PropertyPanel'
 import { BuildingPanel }    from './panels/BuildingPanel'
 import { LightingPanel }    from './panels/LightingPanel'
 import { LandscapingPanel } from './panels/LandscapingPanel'
+import { MaterialsPanel }   from './panels/MaterialsPanel'
 import type { ActivePanel } from '@/types/property'
 
 const PANELS: { id: ActivePanel; label: string; icon: string }[] = [
@@ -47,13 +48,7 @@ export function Sidebar() {
           {activePanel === 'building'    && <BuildingPanel />}
           {activePanel === 'landscaping' && <LandscapingPanel />}
           {activePanel === 'lighting'    && <LightingPanel />}
-          {activePanel === 'materials'   && (
-            <div className="text-zinc-500 text-sm mt-6 text-center">
-              <p className="text-2xl mb-2">🎨</p>
-              <p>Material editor</p>
-              <p className="text-xs mt-1">Coming in Phase 3</p>
-            </div>
-          )}
+          {activePanel === 'materials'   && <MaterialsPanel />}
         </div>
       </div>
     </aside>

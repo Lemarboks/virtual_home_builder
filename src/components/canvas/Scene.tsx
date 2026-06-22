@@ -7,16 +7,19 @@ import { Terrain } from './property/Terrain'
 import { Driveway } from './property/Driveway'
 import { Fence } from './property/Fence'
 import { Pool } from './property/Pool'
+import { Garden } from './property/Garden'
 import { House } from './house/House'
+import { Interior } from './house/Interior'
 import { Trees } from './landscaping/Trees'
 
 export function Scene() {
-  const lotDepth = usePropertyStore((s) => s.property.lotDepth)
+  const lotDepth   = usePropertyStore((s) => s.property.lotDepth)
+  const cameraMode = usePropertyStore((s) => s.view.cameraMode)
 
   return (
     <Canvas
       shadows
-      camera={{ position: [18, 22, lotDepth * 0.7], fov: 42, near: 0.1, far: 500 }}
+      camera={{ position: [18, 22, lotDepth * 0.7], fov: cameraMode === 'fps' ? 75 : 42, near: 0.05, far: 500 }}
       dpr={[1, 1.5]}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       style={{ width: '100%', height: '100%' }}
@@ -31,7 +34,9 @@ export function Scene() {
       <Driveway />
       <Fence />
       <Pool />
+      <Garden />
       <House />
+      <Interior />
       <Trees />
     </Canvas>
   )
