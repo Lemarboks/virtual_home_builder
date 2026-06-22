@@ -22,7 +22,7 @@ function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <a className="brand" href="/" aria-label="Haven home">
+        <a className="brand" href={import.meta.env.BASE_URL} aria-label="Haven home">
           <span className="brand-mark">H</span><span>Haven</span>
         </a>
 
