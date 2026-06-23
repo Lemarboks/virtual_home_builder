@@ -1,0 +1,2 @@
+:HL["/virtual_home_builder/_next/static/chunks/0q614ysakgxxl.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"782ZIoH8DYaRM3kgKsz6K"}
