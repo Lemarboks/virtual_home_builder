@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useFloorPlanStore } from '@/store/useFloorPlanStore'
 import { ROOM_PRESETS } from '@/types/floorplan'
 import type { FPTool, RoomType } from '@/types/floorplan'
@@ -16,6 +17,7 @@ const TOOLS: { id: FPTool; icon: string; label: string; hint: string }[] = [
 const ROOM_TYPES = Object.entries(ROOM_PRESETS) as [RoomType, typeof ROOM_PRESETS[RoomType]][]
 
 export function FloorPlanEditor() {
+  const [panelOpen, setPanelOpen] = useState(false)
   const activeTool   = useFloorPlanStore((s) => s.activeTool)
   const selectedId   = useFloorPlanStore((s) => s.selectedId)
   const rooms        = useFloorPlanStore((s) => s.rooms)
@@ -32,32 +34,37 @@ export function FloorPlanEditor() {
   const hint = TOOLS.find((t) => t.id === activeTool)?.hint ?? ''
 
   return (
-    <div className="flex h-full overflow-hidden bg-zinc-950">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-zinc-950 sm:flex-row">
 
       {/* ── Left: tool rail ─────────────────────────────── */}
-      <aside className="flex flex-col items-center gap-1 w-14 py-3 bg-zinc-950 border-r border-zinc-800 shrink-0">
+      <aside className="order-3 flex h-12 w-full flex-row items-center gap-0.5 border-t border-zinc-800 bg-zinc-950 px-1 shrink-0 sm:order-none sm:h-full sm:w-14 sm:flex-col sm:gap-1 sm:border-r sm:border-t-0 sm:px-0 sm:py-3">
         {TOOLS.map((t) => (
-          <button key={t.id} onClick={() => setActiveTool(t.id)} title={t.label}
-            className={`w-11 h-11 rounded-xl flex items-center justify-center text-base transition-colors
+          <button key={t.id} onClick={() => { setActiveTool(t.id); if (t.id === 'furniture') setPanelOpen(true) }} title={t.label}
+            className={`h-10 flex-1 rounded-xl flex items-center justify-center text-sm transition-colors sm:h-11 sm:w-11 sm:flex-none sm:text-base
               ${activeTool === t.id ? 'bg-blue-600 text-white' : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200'}`}
           >
             {t.icon}
           </button>
         ))}
 
-        <div className="flex-1" />
+        <div className="hidden flex-1 sm:block" />
+
+        <button onClick={() => setPanelOpen((open) => !open)} title="Furniture and properties"
+          className={`h-10 flex-1 rounded-xl text-xs font-bold transition-colors sm:hidden ${panelOpen ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:bg-zinc-800'}`}>
+          Menu
+        </button>
 
         {/* Zoom reset */}
         <button onClick={() => clearAll()} title="Clear all"
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-sm text-zinc-600 hover:bg-red-900 hover:text-red-400 transition-colors">
+          className="h-10 flex-1 rounded-xl flex items-center justify-center text-sm text-zinc-600 hover:bg-red-900 hover:text-red-400 transition-colors sm:h-11 sm:w-11 sm:flex-none">
           🗑
         </button>
       </aside>
 
       {/* ── Centre: canvas ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="order-1 flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden sm:order-none">
         {/* Hint bar */}
-        <div className="px-4 py-2 text-xs text-zinc-400 bg-zinc-900 border-b border-zinc-800 shrink-0 truncate">
+        <div className="px-2 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs text-zinc-400 bg-zinc-900 border-b border-zinc-800 shrink-0 truncate">
           {hint} &nbsp;·&nbsp; <span className="text-zinc-500">Scroll to zoom · Middle-drag to pan</span>
         </div>
 
@@ -66,7 +73,7 @@ export function FloorPlanEditor() {
         </div>
 
         {/* Status bar */}
-        <div className="px-4 py-1.5 text-xs text-zinc-500 bg-zinc-900 border-t border-zinc-800 shrink-0 flex gap-4">
+        <div className="px-2 py-1 text-[10px] sm:px-4 sm:py-1.5 sm:text-xs text-zinc-500 bg-zinc-900 border-t border-zinc-800 shrink-0 flex gap-3 sm:gap-4 overflow-hidden [&>span:last-child]:hidden [&>span:last-child]:sm:inline">
           <span>Rooms: {rooms.length}</span>
           <span>Furniture: {furniture.length}</span>
           <span className="text-zinc-600">Del — delete &nbsp;|&nbsp; R — rotate &nbsp;|&nbsp; Esc — cancel</span>
@@ -74,7 +81,12 @@ export function FloorPlanEditor() {
       </div>
 
       {/* ── Right: properties + catalog ─────────────────── */}
-      <aside className="w-60 bg-zinc-900 border-l border-zinc-800 flex flex-col overflow-hidden shrink-0">
+      <aside className={`${panelOpen ? 'flex' : 'hidden'} absolute inset-x-0 bottom-12 z-20 h-[min(42dvh,22rem)] flex-col overflow-hidden rounded-t-2xl border-x border-t border-zinc-700 bg-zinc-900/98 shadow-2xl backdrop-blur-md sm:static sm:flex sm:h-full sm:w-60 sm:rounded-none sm:border-l sm:border-r-0 sm:border-t-0 sm:border-zinc-800 sm:bg-zinc-900 sm:shadow-none sm:backdrop-blur-none shrink-0`}>
+
+        <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2 sm:hidden shrink-0">
+          <span className="text-xs font-semibold text-white">Furniture & properties</span>
+          <button onClick={() => setPanelOpen(false)} className="grid h-7 w-7 place-items-center rounded-lg bg-zinc-800 text-zinc-400" aria-label="Close panel">x</button>
+        </div>
 
         {/* Selected element properties */}
         {selectedRoom && (

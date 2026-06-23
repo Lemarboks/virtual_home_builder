@@ -4,6 +4,7 @@ import { usePropertyStore } from '@/store/usePropertyStore'
 import { Sidebar }         from './ui/Sidebar'
 import { Header }          from './ui/Header'
 import { FloorPlanEditor } from './floorplan/FloorPlanEditor'
+import { MobileWalkControls } from './ui/MobileWalkControls'
 
 const Scene = dynamic(
   () => import('./canvas/Scene').then((m) => m.Scene),
@@ -26,7 +27,7 @@ function FPSOverlay() {
   const setCameraMode = usePropertyStore((s) => s.setCameraMode)
   if (cameraMode !== 'fps' || appView !== '3d') return null
   return (
-    <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-end pb-8">
+    <div className="absolute inset-0 pointer-events-none z-10 hidden flex-col items-center justify-end pb-8 sm:flex">
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative w-5 h-5">
           <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-white/60" />
@@ -48,23 +49,25 @@ function FPSOverlay() {
 
 export function AppShell() {
   const appView = usePropertyStore((s) => s.view.appView)
+  const cameraMode = usePropertyStore((s) => s.view.cameraMode)
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex min-h-0 flex-col h-full bg-zinc-950">
       <Header />
 
       {appView === '2d' ? (
         /* ── Floor plan editor (full width, no 3D sidebar) ── */
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <FloorPlanEditor />
         </div>
       ) : (
         /* ── 3D scene with sidebar ── */
-        <div className="flex flex-1 overflow-hidden">
+        <div className="relative flex flex-1 min-h-0 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 relative overflow-hidden">
+          <main className="flex-1 relative overflow-hidden pb-12 sm:pb-0">
             <Scene />
             <FPSOverlay />
+            {cameraMode === 'fps' && <MobileWalkControls />}
           </main>
         </div>
       )}

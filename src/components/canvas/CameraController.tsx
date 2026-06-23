@@ -6,6 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import type { PointerLockControls as PLCImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { usePropertyStore } from '@/store/usePropertyStore'
+import { walkControls } from '@/lib/walkControls'
 
 /* ── Orbit / top-down / drone camera ───────────────────────── */
 function OrbitCamera() {
@@ -92,9 +93,19 @@ function FPSCamera() {
 
   useFrame((_, delta) => {
     const ctrl = plcRef.current
-    if (!ctrl?.isLocked) return
+    if (!ctrl?.isLocked && !walkControls.enabled) return
 
-    const speed  = keys.current.ShiftLeft ? 10 : 5   // sprint with shift
+    if (walkControls.enabled) {
+      const lookSpeed = 1.45 * delta
+      if (walkControls.lookLeft) camera.rotation.y += lookSpeed
+      if (walkControls.lookRight) camera.rotation.y -= lookSpeed
+      if (walkControls.lookUp) camera.rotation.x += lookSpeed
+      if (walkControls.lookDown) camera.rotation.x -= lookSpeed
+      camera.rotation.order = 'YXZ'
+      camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, -Math.PI / 2 + 0.12, Math.PI / 2 - 0.12)
+    }
+
+    const speed  = keys.current.ShiftLeft || walkControls.sprint ? 10 : 5
     const k      = keys.current
 
     // Flatten camera's forward vector onto XZ plane
@@ -105,10 +116,10 @@ function FPSCamera() {
     right.current.crossVectors(fwd.current, camera.up).normalize()
 
     dir.current.set(0, 0, 0)
-    if (k.KeyW || k.ArrowUp)    dir.current.addScaledVector(fwd.current,  1)
-    if (k.KeyS || k.ArrowDown)  dir.current.addScaledVector(fwd.current, -1)
-    if (k.KeyA || k.ArrowLeft)  dir.current.addScaledVector(right.current, -1)
-    if (k.KeyD || k.ArrowRight) dir.current.addScaledVector(right.current,  1)
+    if (k.KeyW || k.ArrowUp || walkControls.forward) dir.current.addScaledVector(fwd.current, 1)
+    if (k.KeyS || k.ArrowDown || walkControls.backward) dir.current.addScaledVector(fwd.current, -1)
+    if (k.KeyA || k.ArrowLeft || walkControls.left) dir.current.addScaledVector(right.current, -1)
+    if (k.KeyD || k.ArrowRight || walkControls.right) dir.current.addScaledVector(right.current, 1)
 
     if (dir.current.lengthSq() > 0) {
       dir.current.normalize().multiplyScalar(speed * delta)

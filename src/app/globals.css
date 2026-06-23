@@ -1,6 +1,17 @@
 @import "tailwindcss";
 
 html, body, #__next { height: 100%; }
+body { overflow: hidden; overscroll-behavior: none; }
+
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; }
+}
+
+button, input, select { min-width: 0; }
+canvas { touch-action: none; }
+
+.mobile-scrollbar-none { scrollbar-width: none; }
+.mobile-scrollbar-none::-webkit-scrollbar { display: none; }
 
 /* Thin scrollbar for sidebar panels */
 .scrollbar-thin::-webkit-scrollbar        { width: 4px; }

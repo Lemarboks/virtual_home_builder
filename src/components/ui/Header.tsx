@@ -48,12 +48,12 @@ export function Header() {
     isDirty ? 'Save *' : 'Save'
 
   return (
-    <header className="h-12 flex items-center justify-between px-4 bg-zinc-950 border-b border-zinc-800 shrink-0 z-10">
+    <header className="min-h-12 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-2 py-1.5 sm:px-4 sm:py-0 bg-zinc-950 border-b border-zinc-800 shrink-0 z-30">
 
       {/* Brand + project name */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-emerald-600 grid place-items-center text-white font-bold text-sm">H</div>
-        <span className="text-white font-semibold text-sm tracking-tight">Haven Pro</span>
+      <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+        <div className="w-7 h-7 shrink-0 rounded-lg bg-emerald-600 grid place-items-center text-white font-bold text-sm">H</div>
+        <span className="hidden min-[360px]:inline text-white font-semibold text-sm tracking-tight whitespace-nowrap">Haven Pro</span>
         <span className="hidden sm:block text-zinc-600 text-xs">|</span>
         <input
           className="hidden sm:block bg-transparent text-zinc-300 text-sm outline-none hover:text-white focus:text-white w-40"
@@ -66,7 +66,7 @@ export function Header() {
       </div>
 
       {/* Centre: view toggle + camera modes (3D only) */}
-      <div className="flex items-center gap-2">
+      <div className="order-3 flex w-full min-w-0 items-center gap-1 overflow-x-auto pb-0.5 sm:order-none sm:w-auto sm:gap-2 sm:overflow-visible sm:pb-0 mobile-scrollbar-none">
         {/* 2D / 3D view toggle */}
         <div className="flex items-center bg-zinc-900 rounded-xl p-0.5">
           {(['2d', '3d'] as AppView[]).map((v) => (
@@ -83,7 +83,7 @@ export function Header() {
           <div className="flex items-center gap-0.5 bg-zinc-900 rounded-xl p-0.5">
             {CAMERA_MODES.map(({ mode, icon, label }) => (
               <button key={mode} onClick={() => setCameraMode(mode)} title={label}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors
+                className={`flex shrink-0 items-center gap-1 px-2 py-1.5 sm:px-2.5 rounded-lg text-xs font-medium transition-colors
                   ${cameraMode === mode ? 'bg-emerald-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}>
                 <span>{icon}</span>
                 <span className="hidden lg:inline">{label}</span>
@@ -94,9 +94,9 @@ export function Header() {
       </div>
 
       {/* Save */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <button onClick={handleSave} disabled={saveState === 'saving'}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+          className={`px-2.5 py-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap
             ${saveState === 'saved'  ? 'bg-emerald-700 text-white' :
               saveState === 'error'  ? 'bg-red-700 text-white'     :
               saveState === 'saving' ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' :
