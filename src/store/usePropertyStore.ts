@@ -43,11 +43,14 @@ const DEFAULT_PROPERTY: PropertyConfig = {
   lighting: DEFAULT_LIGHTING,
 }
 
+export type AppView = '3d' | '2d'
+
 interface ViewState {
   activePanel:  ActivePanel
   cameraMode:   CameraMode
   showGrid:     boolean
   showMeasurements: boolean
+  appView:      AppView
 }
 
 interface PropertyStore {
@@ -61,6 +64,7 @@ interface PropertyStore {
   setLighting:     (l: Partial<LightingConfig>) => void
   setActivePanel:  (panel: ActivePanel) => void
   setCameraMode:   (mode: CameraMode) => void
+  setAppView:      (view: AppView) => void
   toggleGrid:      () => void
   markSaved:       () => void
   loadProperty:    (p: PropertyConfig) => void
@@ -68,7 +72,7 @@ interface PropertyStore {
 
 export const usePropertyStore = create<PropertyStore>((set) => ({
   property:  DEFAULT_PROPERTY,
-  view: { activePanel: 'property', cameraMode: 'orbit', showGrid: false, showMeasurements: false },
+  view: { activePanel: 'property', cameraMode: 'orbit', showGrid: false, showMeasurements: false, appView: '3d' },
   isDirty: false,
 
   setProperty:    (patch) => set((s) => ({ property: { ...s.property, ...patch }, isDirty: true })),
@@ -77,6 +81,7 @@ export const usePropertyStore = create<PropertyStore>((set) => ({
   setLighting:    (patch) => set((s) => ({ property: { ...s.property, lighting: { ...s.property.lighting, ...patch } }, isDirty: true })),
   setActivePanel: (panel) => set((s) => ({ view: { ...s.view, activePanel: panel } })),
   setCameraMode:  (mode)  => set((s) => ({ view: { ...s.view, cameraMode: mode } })),
+  setAppView:     (view)  => set((s) => ({ view: { ...s.view, appView: view } })),
   toggleGrid:     ()      => set((s) => ({ view: { ...s.view, showGrid: !s.view.showGrid } })),
   markSaved:      ()      => set({ isDirty: false }),
   loadProperty:   (p)     => set({ property: p, isDirty: false }),
